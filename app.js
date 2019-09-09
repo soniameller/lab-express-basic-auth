@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 'use strict';
 
 const { join } = require('path');
@@ -7,8 +8,12 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const sassMiddleware = require('node-sass-middleware');
 const serveFavicon = require('serve-favicon');
+const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoStore = require("connect-mongo")(session);
 
 const indexRouter = require('./routes/index');
+const authenticationRouter = require('./routes/authentication');
 
 const app = express();
 
@@ -28,8 +33,23 @@ app.use(sassMiddleware({
   outputStyle: process.env.NODE_ENV === 'development' ? 'nested' : 'compressed',
   sourceMap: true
 }));
+// Middleware to enable sessions
+app.use(
+  session({
+    secret: "basic-auth-secret",
+    cookie: { maxAge: 60000 }, //The cookie lives 60.000ms = 1 minute
+    store: new MongoStore({
+      mongooseConnection: mongoose.connection, //Store the session in the database
+      ttl: 24 * 60 * 60 // 1 day
+    }),
+    resave: false, //To avoid console warning
+    saveUninitialized: true //To avoid console warning
+  })
+);
+
 
 app.use('/', indexRouter);
+app.use('/', authenticationRouter);
 
 // Catch missing routes and forward to error handler
 app.use((req, res, next) => {

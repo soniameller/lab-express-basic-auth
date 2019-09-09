@@ -1,0 +1,20 @@
+<form id="form" action="/signup" method="POST">
+    <label for="username">Username</label><br>
+    {{!-- Define a req.body.username --}}
+    <input type="text" name="username"
+      placeholder="Your username"> 
+
+    <label for="password">Password</label><br>
+    <input type="password" name="password"
+      placeholder="Your password">
+
+    <label for="confirmPassword">Confirm Password</label><br>
+    <input type="password" name="confirmPassword"
+      placeholder="Your password again 🙃">
+
+    <button type="submit">Create account</button>
+  </form>
+
+  {{#if errorMessage}}
+  <div class="error-message">{{errorMessage}}</div>
+  {{/if}}
