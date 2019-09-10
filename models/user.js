@@ -1,6 +1,5 @@
 'use strict';
 const mongoose = require("mongoose");
-const Schema   = mongoose.Schema;
 
 //A user has 5 different fields
 // - _id: Schema.Types.ObjectId (generated automatically)
@@ -8,7 +7,7 @@ const Schema   = mongoose.Schema;
 // - password
 // - createdAt: Date (generated automatically thanks to 'timestamps:true')
 // - updatedAt: Date (generated automatically thanks to 'timestamps:true')
-const userSchema = new Schema({
+const userSchema = new mongoose.Schema({
   username: {
     type:String, 
     required:true, 
@@ -24,6 +23,5 @@ const userSchema = new Schema({
   timestamps: true //Option
 });
 
-const User = mongoose.model("User", userSchema);
 
-module.exports = User;
+module.exports = mongoose.model("User", userSchema);

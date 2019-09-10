@@ -3,9 +3,8 @@
 
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
-const bcryptSalt = 10;
 const User = require("../models/user");
+const bcrypt = require("bcrypt");
 
 //To display the signup form
 router.get("/signup", (req, res, next) => {
@@ -14,22 +13,19 @@ router.get("/signup", (req, res, next) => {
 
 //Handle the signup form submission
 router.post("/signup", (req, res, next) => {
-  let { username, password, confirmPassword } = req.body;
-  const salt = bcrypt.genSaltSync(bcryptSalt);
-  const hashPass = bcrypt.hashSync(password, salt);
-
+  const { username, password, confirmPassword } = req.body;
+  
   if (username === "" || password === "") {
     res.render("authentication/signup", {
       errorMessage: " Please enter a username and a password"
     });
     return; //to stop the function
   }
-
   //Check if the password is strong enough
-  if (
+  if ( 
     password.length < 7 ||
-    !password.match(/[0-9]/) ||
-    !password.match(/[A-Z]/)
+    !password.match(/[0-9]/) || //This regular expresion finds any character that is a digit
+    !password.match(/[A-Z]/) // Finds any uppercase letter
   ) {
     res.render("authentication/signup", {
       errorMessage:
@@ -37,7 +33,6 @@ router.post("/signup", (req, res, next) => {
     });
     return; //to stop the function
   }
-
   //Check if the user typed the same pasword twice
   if (password !== confirmPassword) {
     res.render("authentication/signup", {
@@ -45,28 +40,37 @@ router.post("/signup", (req, res, next) => {
     });
     return; //to stop the function
   }
-
-  User.findOne({ username: username }).then(user => {
-    if (user) {
-      res.render("authentication/signup", {
-        errorMessage: "The username is already taken"
-      });
-    } else {
-      User.create({
+  
+  User.findOne({ username })
+    .then(user => {
+      if (user) {
+        throw new Error("The username is already taken");
+        // Would also work
+        // return Promise.reject(new Error("The username is already taken"));
+      } else {
+        const bcryptSaltRounds = 10;
+        return bcrypt.hash(password, bcryptSaltRounds);
+      }
+    })
+    .then(hash => {
+      return User.create({
         username,
-        password: hashPass
-      })
-        .then(() => {
-          res.redirect("/");
-        })
-        .catch(error => {
-          //next of error goes to the error page. If it is just console.log it thinks forever
-          next(error);
-        });
-    }
-  });
+        password: hash
+      });
+    })
+    .then(user => {
+      req.session.currentUser = user;
+      res.redirect("/");
+    })
+    .catch(error => {
+      const data = {
+        errorMessage: error.message
+      };
+      res.render("authentication/signup", data);
+    });
 });
 
+// REVIEW /authentication/login.hbs structure
 router.get("/login", (req, res, next) => {
   res.render("authentication/login");
 });
@@ -77,48 +81,41 @@ router.post("/login", (req, res, next) => {
 
   if (theUsername === "" || thePassword === "") {
     res.render("authentication/login", {
-      errorMessage: "Please enter both, username and password to sign up."
+      errorMessage: "Please enter both, username and password to login."
     });
     return;
   }
 
-  User.findOne({ username: theUsername })
-    .then(user => {
-      if (!user) {
-        res.render("authentication/login", {
-          errorMessage: "The username doesn't exist."
-        });
-        return;
-      }
-      if (bcrypt.compareSync(thePassword, user.password)) {
-        // Save the login in the session!
-        req.session.currentUser = user;
-        res.redirect("/");
-      } else {
-        res.render("authentication/login", {
-          errorMessage: "Incorrect password"
-        });
-      }
-    })
-    .catch(error => {
-      next(error);
-    });
+  let auxiliaryUser;
+  User.findOne({ username: theUsername }) 
+  .then(user => {
+    if (!user) {
+      throw new Error("The username doesn't exist");
+    } else {
+      auxiliaryUser = user;
+      return bcrypt.compareSync(thePassword, user.password);
+    }
+  })
+  .then(match=> {
+    if (!match) {
+      throw new Error("Incorrect password");
+    } else {
+      req.session.currentUser = auxiliaryUser;
+      res.redirect("/");
+    }
+  })
+  .catch(error => {
+    const data = {
+      errorMessage: error.message
+    };
+    res.render("authentication/login", data);
+  });
 });
 
-//TO go to the profile page we have to be conected
-router.get("/profile", (req, res, next) => {
-  if (req.session.currentUser) {
-    res.render("profile", {
-      user: req.session.currentUser
-    });
-  } else {
-    res.redirect("/login");
-  }
-});
 
-router.get("/logout", (req, res, next) => {
+router.post("/logout", (req, res, next) => {
   req.session.destroy(err => {
-    // can't access session here
+    // can't access session here REVIEW. I can because it is in locals??
     res.redirect("/login");
   });
 });

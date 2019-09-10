@@ -1,20 +1,26 @@
 <form id="form" action="/signup" method="POST">
+  <h2>Signup</h2>
+
+  <div class="form-group">
     <label for="username">Username</label><br>
     {{!-- Define a req.body.username --}}
-    <input type="text" name="username"
-      placeholder="Your username"> 
+    {{!-- REVIEW front end validation. Leave the back end validation too? --}}
+    <input  class="form-control" type="text" name="username" placeholder="Your username" required>
+  </div>
 
-    <label for="password">Password</label><br>
-    <input type="password" name="password"
-      placeholder="Your password">
+  <div class="form-group">
+  <label for="password">Password</label><br>
+  <input  class="form-control" type="password" name="password" placeholder="Your password" required>
+  </div>
 
-    <label for="confirmPassword">Confirm Password</label><br>
-    <input type="password" name="confirmPassword"
-      placeholder="Your password again 🙃">
+  <div class="form-group">
+  <label for="confirmPassword">Confirm Password</label><br>
+  <input  class="form-control" type="password" name="confirmPassword" placeholder="Your password again 🙃" required>
+  </div>
 
-    <button type="submit">Create account</button>
-  </form>
+  <button class="btn btn-dark">Create account</button>
+</form>
 
-  {{#if errorMessage}}
-  <div class="error-message">{{errorMessage}}</div>
-  {{/if}}
+{{#if errorMessage}}
+<div class="text-danger font-italic mt-3">{{errorMessage}}</div>
+{{/if}}

@@ -8,9 +8,10 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const sassMiddleware = require('node-sass-middleware');
 const serveFavicon = require('serve-favicon');
-const mongoose = require("mongoose");
+
 const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
+const mongoose = require("mongoose");
 
 const indexRouter = require('./routes/index');
 const authenticationRouter = require('./routes/authentication');
@@ -34,10 +35,9 @@ app.use(sassMiddleware({
   sourceMap: true
 }));
 // Middleware to enable sessions
-app.use(
-  session({
-    secret: "basic-auth-secret",
-    cookie: { maxAge: 60000 }, //The cookie lives 60.000ms = 1 minute
+app.use(session({
+    secret: "basic-auth-secret", // should be stored in the .env file
+    cookie: { maxAge: 60 * 1000 }, //The cookie lives 60.000ms = 1 minute 
     store: new MongoStore({
       mongooseConnection: mongoose.connection, //Store the session in the database
       ttl: 24 * 60 * 60 // 1 day
@@ -47,6 +47,14 @@ app.use(
   })
 );
 
+//REVIEW - HOW DO I USE IT?
+// Custom piece of middleware
+app.use((req, res, next) => {
+  // Access user information from within my templates
+  res.locals.user = req.session.user;
+  // Keep going to the next middleware or route handler
+  next();
+});
 
 app.use('/', indexRouter);
 app.use('/', authenticationRouter);
